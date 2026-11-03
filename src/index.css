@@ -93,3 +93,4 @@ input.num { text-align: center; font-size: 20px; font-weight: 600; }
 .section-label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; padding: 10px 4px 2px; }
 .list-item { text-align: left; background: var(--card); border: 0; color: var(--text); border-radius: 10px; padding: 14px; font: inherit; min-height: 48px; }
 .list-item.add-new { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.last-note { font-size: 14px; color: #fcd34d; background: #2a2410; border-radius: 10px; padding: 8px 10px; white-space: pre-wrap; }

@@ -50,11 +50,11 @@ export function WorkoutEditor({ initial, onDone }: Props) {
   const exById = useMemo(() => new Map(data.exercises.map((e) => [e.id, e])), [data.exercises])
 
   const lastTime = (exerciseId: string) => {
-    let best: { date: string; sets: SetEntry[] } | null = null
+    let best: { date: string; sets: SetEntry[]; comment: string } | null = null
     for (const w of data.workouts) {
       if (w.id === draft.id || w.date > draft.date) continue
       const e = w.entries.find((x) => x.exerciseId === exerciseId)
-      if (e && e.sets.length && (!best || w.date > best.date)) best = { date: w.date, sets: e.sets }
+      if (e && e.sets.length && (!best || w.date > best.date)) best = { date: w.date, sets: e.sets, comment: e.comment }
     }
     return best
   }
@@ -152,6 +152,7 @@ export function WorkoutEditor({ initial, onDone }: Props) {
                 </button>
               </div>
             )}
+            {last?.comment && <div className="last-note">Your note last time: {last.comment}</div>}
 
             <label className="field">
               <span>Goal</span>
