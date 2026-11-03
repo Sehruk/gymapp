@@ -66,3 +66,29 @@ describe('backup', () => {
     expect(() => parseBackup(JSON.stringify({ app: 'GymApp', version: 1, workouts: [{ id: 'x', date: 'bad', entries: [] }] }))).toThrow(/invalid workout/)
   })
 })
+
+import { entriesFrom, lastWorkoutWithTitle, titleOptions } from './templates'
+
+describe('templates', () => {
+  const mk = (id: string, date: string, title: string, n = 1) => ({
+    id, date, title, comment: '', createdAt: 0, updatedAt: 0,
+    entries: Array.from({ length: n }, (_, i) => ({ id: `${id}e${i}`, exerciseId: 'e1', goal: '3 x 5', comment: 'old', sets: [{ reps: 8, weight: 30, rpe: 9 }] })),
+  })
+  const ws = [mk('a', '2026-10-01', 'UPPER A'), mk('b', '2026-10-20', 'upper a', 2), mk('c', '2026-10-10', 'LOWER A')]
+  it('offers presets plus history without case duplicates', () => {
+    const t = titleOptions(ws)
+    expect(t.filter((x) => x.toLowerCase() === 'upper a')).toHaveLength(1)
+    expect(t).toContain('LEG')
+  })
+  it('finds the latest same-title workout, ignoring case and the current one', () => {
+    expect(lastWorkoutWithTitle(ws, 'UPPER A', 'x', '2026-11-03')?.id).toBe('b')
+    expect(lastWorkoutWithTitle(ws, 'UPPER A', 'b', '2026-11-03')?.id).toBe('a')
+    expect(lastWorkoutWithTitle(ws, 'PULL', 'x', '2026-11-03')).toBeNull()
+  })
+  it('copies exercises and sets but not comments or RPE', () => {
+    const e = entriesFrom(ws[1], () => 'new')
+    expect(e).toHaveLength(2)
+    expect(e[0]).toMatchObject({ goal: '3 x 5', comment: '', sets: [{ reps: 8, weight: 30 }] })
+    expect(e[0].sets[0]).not.toHaveProperty('rpe', 9)
+  })
+})

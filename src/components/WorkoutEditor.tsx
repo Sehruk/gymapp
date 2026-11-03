@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatDate } from '../lib/dates'
 import { formatSet } from '../lib/exporters'
+import { entriesFrom, lastWorkoutWithTitle, titleOptions } from '../lib/templates'
 import { newId, useStore } from '../store'
 import type { Exercise, ExerciseEntry, SetEntry, Workout } from '../types'
 import { ExercisePicker } from './ExercisePicker'
@@ -17,6 +18,7 @@ export function WorkoutEditor({ initial, onDone }: Props) {
   const { data, saveWorkout, deleteWorkout, saveExercise } = useStore()
   const [draft, setDraft] = useState<Workout>(initial)
   const [picking, setPicking] = useState(false)
+  const [titleOpen, setTitleOpen] = useState(false)
   const latest = useRef(draft)
   const dirty = useRef(false)
 
@@ -57,6 +59,17 @@ export function WorkoutEditor({ initial, onDone }: Props) {
     return best
   }
 
+  const titles = useMemo(() => titleOptions(data.workouts), [data.workouts])
+
+  const chooseTitle = (title: string) => {
+    setTitleOpen(false)
+    const prev = lastWorkoutWithTitle(data.workouts, title, draft.id, draft.date)
+    const fill = prev && draft.entries.length === 0
+    const replace =
+      prev && draft.entries.length > 0 && confirm(`Replace the exercises below with those from your last ${title} (${prev.date})?`)
+    update((w) => ({ ...w, title, entries: fill || replace ? entriesFrom(prev, newId) : w.entries }))
+  }
+
   const addExercise = (ex: Exercise) => {
     setPicking(false)
     const last = lastTime(ex.id)
@@ -94,7 +107,10 @@ export function WorkoutEditor({ initial, onDone }: Props) {
         </label>
         <label className="field">
           <span>Title</span>
-          <input placeholder="e.g. UPPER A, PUSH, LEG" value={draft.title} onChange={(e) => update((w) => ({ ...w, title: e.target.value }))} />
+          <div className="row">
+            <input placeholder="Pick or type, e.g. UPPER A" value={draft.title} onChange={(e) => update((w) => ({ ...w, title: e.target.value }))} />
+            <button className="btn secondary" aria-label="Choose title" onClick={() => setTitleOpen(true)}>▾</button>
+          </div>
         </label>
       </div>
 
@@ -184,6 +200,19 @@ export function WorkoutEditor({ initial, onDone }: Props) {
       </div>
       <p className="hint">Saved automatically · {formatDate(draft.date)}</p>
 
+      {titleOpen && (
+        <div className="sheet-backdrop" onClick={() => setTitleOpen(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head"><strong style={{ flex: 1 }}>Workout title</strong><button className="btn ghost" onClick={() => setTitleOpen(false)}>Close</button></div>
+            <div className="sheet-body">
+              <p className="hint">Picking a title fills in the exercises from your last workout with that title.</p>
+              {titles.map((t) => (
+                <button key={t} className="list-item" onClick={() => chooseTitle(t)}>{t}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {picking && <ExercisePicker onPick={addExercise} onClose={() => setPicking(false)} />}
     </div>
   )
